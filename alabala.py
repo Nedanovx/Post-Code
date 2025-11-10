@@ -1,6 +1,7 @@
 import re
 import requests
 from pprint import pprint
+from openpyxl import Workbook
 addresses = [
     "С.АБЛАНИЦА ОбЩ.ХАДЖИДИМОВО ОБЛ.БЛАГОЕВГРАД ул. Център 5", #2932
     "С.АБЛАНИЦА ОБЩ.ЛОВЕЧ ОБЛ.ЛОВЕЧ ул. Странджа 11", #5574
@@ -17,7 +18,10 @@ addresses = [
     "С.НОВИ ИСКЪР ОБЩ.СОФИЯ ОБЛ.СТОЛИЧНА ул. 1-ва 3", #1280
     "С.Победа ОБЩ.Добрич ОБЛ.Добрич ул. Втора 5" # в бг пощи общината се казва Добрич-селска , но в адреса е само Добрич????
 ]
-postcode =''
+wb = Workbook()
+ws = wb.active
+ws.title = "Postal Codes"
+ws.append(["Адрес", "Пощенски код"])
 count=0
 pattern = re.compile(
     r'(?i)\b(?P<type>ГР|С)\.\s*'
@@ -33,6 +37,7 @@ pattern = re.compile(
 url = "https://bgpostcode.com/api/v1/city?name="
 for address in addresses:
     count+=1
+    postcode =''
     #print(address)
     match = pattern.search(address)
     # print(match)
@@ -65,11 +70,15 @@ for address in addresses:
                     elif data[item]['municipality']['name'].lower() == obshtina.lower() and data[item]['region']['name'].lower() == oblast.lower():
                         postcode = data[item]['postcode']
                         print(f'{count} City {city} Postcode: {postcode}')
-                        break
-                    else:
-                        print(f'{count} not match {obshtina}, {oblast} for {city}')                        
+                        break    
+                if postcode =='':
+                    print(f'Count {count} not found {city} {obshtina} {oblast}')
+                    postcode ='' 
+            ws.append([address, postcode])                            
         else:
             print(f'{response.status_code}')
+            ws.append([address, ''])
     else:
         print(f'No match')                        
-                    
+wb.save("postal_codes.xlsx")
+print("done")                    
